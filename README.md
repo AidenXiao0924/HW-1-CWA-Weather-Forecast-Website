@@ -1,4 +1,15 @@
-# Taiwan Weather Lab / 台灣氣象觀測所
+# HW1: CWA 天氣預報網站 using AI Agent
+
+> **課程名稱**：AIoT 與數據分析（AIoT & Data Analytics, AIoT-DA）  
+> **作業主題**：HW1 — CWA 天氣預報網站 using AI Agent  
+> **作者**：Aiden Xiao  
+> **儲存庫網址**：https://github.com/AidenXiao0924/HW-1-CWA-Weather-Forecast-Website  
+> **Live Demo Page**：https://taiwan-weather-eight.vercel.app/
+
+## 網站畫面
+
+![台灣氣象觀測所網站畫面](weather-website-preview.png)
+
 
 單一天氣地圖網站，整合即時測站觀測與一週預報。
 
