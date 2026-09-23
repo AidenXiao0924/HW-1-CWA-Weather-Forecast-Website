@@ -1,4 +1,6 @@
 import os
+import tempfile
+import tempfile
 from pathlib import Path
 from dotenv import load_dotenv
 
@@ -12,7 +14,11 @@ WINDY_KEY = os.getenv('WINDY_API_KEY', '')
 FORECAST_ID = os.getenv('CWA_FORECAST_DATASET', 'F-D0047-091')
 OBSERVATION_ID = os.getenv('CWA_OBSERVATION_DATASET', 'O-A0001-001')
 CACHE_TTL = max(60, int(os.getenv('CACHE_TTL_SECONDS', '600')))
-DB_PATH = ROOT / ('demo.db' if MODE == 'demo' else 'data.db')
+IS_VERCEL = os.getenv('VERCEL') == '1'
+# Serverless instances have a read-only application directory and temporary cache.
+CACHE_DIR = Path(tempfile.gettempdir()) / 'taiwan-weather' if IS_VERCEL else ROOT
+CACHE_DIR.mkdir(parents=True, exist_ok=True)
+DB_PATH = CACHE_DIR / ('demo.db' if MODE == 'demo' else 'data.db')
 REGIONS = ['北部地區', '中部地區', '南部地區', '東北部地區', '東部地區', '東南部地區']
 REGION_COORDS = [(25.03,121.51),(24.14,120.68),(22.99,120.21),(24.75,121.75),(23.98,121.60),(22.76,121.14)]
 

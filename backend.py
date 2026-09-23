@@ -5,7 +5,7 @@ from pathlib import Path
 from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
-from config import MODE, WINDY_KEY, CACHE_TTL
+from config import MODE, WINDY_KEY, CACHE_TTL, IS_VERCEL, IS_VERCEL
 from service import load
 
 async def refresh_loop():
@@ -15,6 +15,14 @@ async def refresh_loop():
 
 @asynccontextmanager
 async def lifespan(app):
+    if IS_VERCEL:
+        # Requests refresh the temporary cache through service.load().
+        yield
+        return
+    if IS_VERCEL:
+        # Each request refreshes expired cache through service.load().
+        yield
+        return
     task=asyncio.create_task(refresh_loop())
     yield
     task.cancel()
@@ -58,7 +66,7 @@ def forecast(region:str|None=None,refresh:bool=False):
     import database
     data=load('forecast',refresh)
     data.pop('rows')
-    # A parameterized SQL query, same database used by Streamlit.
+    # Filter the cached forecast with a parameterized SQL query.
     return dict(data,rows=database.get_forecast(region))
 
 @app.get('/api/health')
