@@ -3,7 +3,7 @@
 > 課程名稱：AIoT 與數據分析（AIoT & Data Analytics, AIoT-DA）
 > 作者：Aiden Xiao
 > 儲存庫：https://github.com/AidenXiao0924/HW-1-CWA-Weather-Forecast-Website
-> Streamlit Live Demo：尚未部署。既有 Vercel 網址是舊 FastAPI 版本，不代表本次重構已上線。
+> Live Demo：https://aiden-taiwan-weather.streamlit.app/
 
 以 Streamlit 為唯一正式入口的台灣氣象 Dashboard。沿用原本的 Requests、JSON parser、資料驗證、SQLite schema 與 service 快取，替換 Presentation Layer。
 
@@ -100,14 +100,14 @@ Lock 與嘗試間隔是單一 Python 程序共享；多程序部署不具跨程�
 
 ## 部署
 
-新版不沿用 Vercel FastAPI Functions；它需要執行 Streamlit 的持續服務與連線。可使用 Streamlit Community Cloud，連結既有 GitHub repo 與 branch，entry point 指定 streamlit_app.py，於 Advanced settings 設定 Secrets：
+正式網站部署於 Streamlit Community Cloud，連結本儲存庫 `main` 分支，入口為 `streamlit_app.py`。雲端 Secrets 設定如下：
 
 ```toml
 DATA_MODE = "live"
 CWA_API_KEY = "填入自己的金鑰"
 ```
 
-參考 [Community Cloud 部署](https://docs.streamlit.io/deploy/streamlit-community-cloud/deploy-your-app) 與 [Secrets 管理](https://docs.streamlit.io/deploy/streamlit-community-cloud/deploy-your-app/secrets-management)。雲端本機磁碟不可視為永久保存；重建／休眠後可能需重新取得 CWA。需要持久 cache 可選支援持久磁碟的主機並設 WEATHER_CACHE_DIR。不要把原 Vercel 網址當作新版驗證成果；本次沒有修改雲端服務。
+GitHub `main` 更新後，Community Cloud 會自動更新網站。參考 [Community Cloud 部署](https://docs.streamlit.io/deploy/streamlit-community-cloud/deploy-your-app) 與 [Secrets 管理](https://docs.streamlit.io/deploy/streamlit-community-cloud/deploy-your-app/secrets-management)。雲端本機磁碟不可視為永久保存；重建／休眠後可能需重新取得 CWA。需要持久 cache 可選支援持久磁碟的主機並設 WEATHER_CACHE_DIR。
 
 ## 目錄
 
