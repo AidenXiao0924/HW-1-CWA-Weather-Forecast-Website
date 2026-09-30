@@ -41,4 +41,10 @@ def load(kind, force=False):
             except (RuntimeError,ValueError) as exc:
                 _errors[kind]=str(exc)
         status='demo' if MODE=='demo' and rows else ('stale' if rows and (kind in _errors or age>=CACHE_TTL and should_fetch and meta.get('fetched_at')!=now.isoformat()) else 'fresh' if rows else 'unavailable')
+        # Observation age is independent of download/cache age (formerly in FastAPI).
+        if kind == 'observations' and rows and status == 'fresh':
+            latest = max(datetime.fromisoformat(r['observed_at']) for r in rows)
+            if (now-latest).total_seconds() > 7200:
+                status = 'stale'
+                _errors[kind] = '觀測時間已超過兩小時。'
         return {'source':meta.get('source','CWA' if MODE=='live' else 'DEMO'),'status':status,'fetched_at':meta.get('fetched_at'),'note':meta.get('note'),'dataset':meta.get('dataset'),'message':_errors.get(kind),'rows':rows}

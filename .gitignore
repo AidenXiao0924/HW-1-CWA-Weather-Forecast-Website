@@ -10,3 +10,10 @@ observations.json
 *.log
 
 work/
+
+.streamlit/secrets.toml
+*.db
+*.db-*
+*.sqlite*
+.coverage
+htmlcov/

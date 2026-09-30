@@ -8,11 +8,11 @@ import urllib.request
 import webbrowser
 ROOT=Path(__file__).resolve().parent
 PIDFILE=ROOT/'work'/'servers.json'
-SERVICES=[('map',8000,['-m','uvicorn','backend:app','--host','127.0.0.1','--port','8000'])]
+SERVICES=[('streamlit',8501,['-m','streamlit','run',str(ROOT/'streamlit_app.py'),'--server.address','127.0.0.1','--server.port','8501','--server.headless','true'])]
 
 def healthy(port):
     try:
-        with urllib.request.urlopen(f'http://127.0.0.1:{port}/'+'api/health',timeout=2) as r:
+        with urllib.request.urlopen(f'http://127.0.0.1:{port}/'+'_stcore/health',timeout=2) as r:
             return r.status==200
     except Exception:return False
 

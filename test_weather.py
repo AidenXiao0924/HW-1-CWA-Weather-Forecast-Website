@@ -1,7 +1,6 @@
 from copy import deepcopy
 from datetime import datetime, timezone
 import pytest
-from fastapi.testclient import TestClient
 from demo_data import forecast, observations
 from parse_weather import parse_forecast, parse_observations, number
 import database
@@ -65,19 +64,6 @@ def test_live_failure_never_uses_demo(monkeypatch):
     monkeypatch.setattr(service,'fetch_dataset',fail)
     result=service.load('forecast',True)
     assert result['status']=='unavailable' and result['rows']==[]
-
-def test_endpoints():
-    from backend import app
-    with TestClient(app) as client:
-        latest=client.get('/api/temperature/latest').json()
-        assert latest['source']=='DEMO' and latest['count']==12
-        geo=client.get('/api/temperature/geojson').json()
-        assert geo['features'][0]['geometry']['coordinates']==[121.51,25.03]
-        assert client.get('/api/temperature/stations/DEMO001').status_code==200
-        assert client.get('/api/temperature/stations/no-such-station').status_code==404
-        assert len(client.get('/api/forecast',params={'region':'中部地區'}).json()['rows'])==7
-        assert 'CWA_API_KEY' not in client.get('/api/config').text
-        assert client.get('/').status_code==200
 
 def test_county_aggregation_and_partial_day():
     raw={'records':{'Locations':[{'Location':[]}]}}

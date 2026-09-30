@@ -9,9 +9,20 @@ def fetch_dataset(dataset):
         response=requests.get(f'https://opendata.cwa.gov.tw/api/v1/rest/datastore/{dataset}',params={'Authorization':CWA_KEY,'format':'JSON'},timeout=(10,30))
         response.raise_for_status()
         data=response.json()
-    except (requests.RequestException,ValueError):
-        # Do not expose response URLs, which contain credentials, in logs or browser.
-        raise RuntimeError('氣象署資料取得失敗，請檢查網路、金鑰或資料集權限。') from None
+    except requests.ConnectionError as exc:
+        # Requests includes the credential in exception URLs. Never show it.
+        if 'WinError 10013' in str(exc):
+            raise RuntimeError('目前執行環境阻擋連線至氣象署（Windows 錯誤 10013）；尚無法驗證金鑰。') from None
+        raise RuntimeError('無法連線至氣象署；請檢查網路連線。') from None
+    except requests.Timeout:
+        raise RuntimeError('連線至氣象署逾時；請稍後再試。') from None
+    except requests.HTTPError as exc:
+        status = exc.response.status_code if exc.response is not None else None
+        if status in (401, 403):
+            raise RuntimeError('氣象署拒絕授權；請檢查金鑰及資料集權限。') from None
+        raise RuntimeError(f'氣象署回應 HTTP {status or "錯誤"}；請檢查資料集或稍後再試。') from None
+    except (requests.RequestException, ValueError):
+        raise RuntimeError('氣象署回應無法解析；請稍後再試。') from None
     if str(data.get('success','true')).lower() != 'true':
         raise RuntimeError('氣象署回傳失敗狀態。')
     return data
