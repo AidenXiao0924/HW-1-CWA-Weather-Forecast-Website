@@ -5,7 +5,7 @@
 > 儲存庫：https://github.com/AidenXiao0924/HW-1-CWA-Weather-Forecast-Website  
 > Live Demo：https://aiden-taiwan-weather.streamlit.app/
 
-以 Streamlit 為唯一正式入口的台灣氣象 Dashboard。沿用原本的 Requests、JSON parser、資料驗證、SQLite schema 與 service 快取，替換 Presentation Layer。
+以 Streamlit 打造的台灣氣象互動式 Dashboard，整合中央氣象署（CWA）Open Data，即時呈現氣象測站觀測與七日天氣預報，並透過 Pandas、SQLite、Folium 與 Altair 完成資料處理、快取、互動地圖及圖表視覺化。
 
 ## 網站畫面
 
