@@ -1,9 +1,9 @@
 # HW1: CWA 天氣預報網站 using AI Agent
 
 > 課程名稱：AIoT 與數據分析（AIoT & Data Analytics, AIoT-DA）
-> 作者：Aiden Xiao
-> 儲存庫：https://github.com/AidenXiao0924/HW-1-CWA-Weather-Forecast-Website
-> Live Demo：https://aiden-taiwan-weather.streamlit.app/
+> 作者：Aiden Xiao  
+> 儲存庫：https://github.com/AidenXiao0924/HW-1-CWA-Weather-Forecast-Website  
+> Live Demo：https://aiden-taiwan-weather.streamlit.app/  
 
 以 Streamlit 為正式入口的台灣即時氣象 Dashboard。網站整合 CWA 測站觀測、七日預報與天氣警特報，並以漸層內插、縣市色塊、排行榜及資料品質面板協助使用者快速理解全台天氣。資料管線沿用 Requests、JSON parser、資料驗證、SQLite schema 與 service 快取。
 
