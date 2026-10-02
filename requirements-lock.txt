@@ -20,11 +20,12 @@ markupsafe==3.0.3
 narwhals==2.26.0
 numpy==2.5.3
 packaging==26.3
-pandas==3.0.6
+pandas==2.3.3
 pillow==12.3.0
 pluggy==1.6.0
 protobuf==7.36.2
 pyarrow==25.0.1
+pytz==2026.4
 pydeck==0.9.3
 pygments==2.21.0
 pytest==9.1.1

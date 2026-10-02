@@ -1,5 +1,5 @@
 streamlit>=1.37,<2
-pandas>=2.2,<4
+pandas>=2.2,<3
 folium>=0.17,<1
 streamlit-folium>=0.23,<1
 altair>=5,<7

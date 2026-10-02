@@ -28,3 +28,16 @@
 - GitHub：尚未更新為 Streamlit 版本。
 - working tree：本機原始工作副本從未提交；31 個交付檔案已 staged，沒有未 staged 的修改。不是 clean committed tree，未宣稱提交完成。
 - 下一步：在正確且已有歷史／remote 的 clone 套用本次修改，設定自己的 Git 作者身分，再測試、檢查 diff、commit、push 既有 branch。不要 force push 這個無歷史工作副本。
+# Enhancement validation (2026-10-02)
+
+- `pytest test_weather.py test_dashboard.py -q`: **26 passed**.
+- Live CWA integration: **852 observations**, **42 complete forecast rows**, **20 active county warning rows**; all three sources reported `fresh`.
+- Complete forecast fields verified: temperature, apparent temperature, precipitation probability, humidity, UV index, weather, wind, comfort, and description.
+- Warning parser, empty-warning snapshot, county filter, outing advice, precipitation chart, and three-tab Streamlit navigation are covered by tests.
+- Temperature, humidity, precipitation, and wind map layers render dynamic legends and skip unavailable values.
+- Map presentation covers the default IDW gradient, county choropleth, and station-circle modes; station points can be overlaid on the first two modes.
+- Map interactions cover nearest-station selection, active-warning county outlines, and the Leaflet fullscreen control.
+- The ranking tab includes a two-to-three county comparison panel; the Hero adapts to warning, temperature, and observation-time context.
+- County aggregation, rankings, CSV output, source status, and observation-field completeness are covered by tests.
+- Streamlit navigation now includes five tabs: observations, forecast, county rankings, warnings, and data quality.
+- Visual presentation includes a responsive weather hero, glass cards, seven-day forecast cards, ranking podium, source-status badges, completeness progress bars, and reduced-motion support.

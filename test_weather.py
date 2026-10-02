@@ -1,8 +1,8 @@
 from copy import deepcopy
 from datetime import datetime, timezone
 import pytest
-from demo_data import forecast, observations
-from parse_weather import parse_forecast, parse_observations, number
+from demo_data import forecast, observations, warnings
+from parse_weather import parse_forecast, parse_observations, parse_warnings, number
 import database
 import service
 
@@ -77,3 +77,16 @@ def test_county_aggregation_and_partial_day():
         raw['records']['Locations'][0]['Location'].append({'LocationName':county,'WeatherElement':elems})
     rows=parse_forecast(raw)
     assert rows==[{'regionName':'北部地區','dataDate':'2026-09-24','mint':18.0,'maxt':31.0}]
+
+def test_complete_forecast_fields_and_warnings():
+    rows=parse_forecast(forecast())
+    first=next(row for row in rows if row['regionName']=='北部地區')
+    assert first['precipitation_probability']==30
+    assert first['max_apparent_c']==31
+    assert first['humidity_percent']==78
+    assert first['uv_index']==6
+    alerts=parse_warnings(warnings())
+    assert alerts[0]['county']=='臺北市' and alerts[0]['phenomenon']=='高溫'
+
+def test_empty_warning_snapshot_is_valid():
+    assert parse_warnings({'records':{'location':[]}})==[]

@@ -2,6 +2,8 @@
 import csv
 import json
 import math
+import re
+from collections import Counter
 from datetime import datetime
 from config import ROOT, REGIONS, REGION_COUNTIES
 
@@ -34,6 +36,18 @@ def element_number(period):
     param = period.get('parameter', {})
     return number(param.get('parameterName'))
 
+def element_value(period):
+    return next(iter(items(period.get('elementValue', period.get('ElementValue', {})))), {})
+
+def numeric_text(value, low=-20, high=1000):
+    """Read the first finite number from values such as '>= 11'."""
+    match = re.search(r'-?\d+(?:\.\d+)?', str(value or ''))
+    return number(match.group(0), low, high) if match else None
+
+def most_common(values):
+    values = [str(value).strip() for value in values if str(value or '').strip()]
+    return Counter(values).most_common(1)[0][0] if values else None
+
 def parse_forecast(payload):
     daily = {}
     county_dates = {}
@@ -49,9 +63,6 @@ def parse_forecast(payload):
             continue
         for element in items(location.get('weatherElement', location.get('WeatherElement'))):
             name = element.get('elementName', element.get('ElementName'))
-            column = {'MinT':'mint','最低溫度':'mint','MaxT':'maxt','最高溫度':'maxt'}.get(name)
-            if not column:
-                continue
             for period in items(element.get('time', element.get('Time'))):
                 stamp = period.get('startTime', period.get('StartTime', period.get('dataTime', period.get('DataTime', ''))))
                 try:
@@ -60,14 +71,74 @@ def parse_forecast(payload):
                     continue
                 if county:
                     county_dates.setdefault(date, set()).add(datetime.fromisoformat(stamp).hour)
-                value = element_number(period)
-                if value is None:
-                    continue
                 row = daily.setdefault((region,date), {'regionName':region,'dataDate':date})
-                old = row.get(column, value)
-                row[column] = min(old,value) if column == 'mint' else max(old,value)
+                value_node = element_value(period)
+                numeric = {
+                    'MinT': ('mint', 'min', element_number(period)),
+                    '最低溫度': ('mint', 'min', numeric_text(value_node.get('MinTemperature'), -20, 50)),
+                    'MaxT': ('maxt', 'max', element_number(period)),
+                    '最高溫度': ('maxt', 'max', numeric_text(value_node.get('MaxTemperature'), -20, 50)),
+                    '平均溫度': ('temperature_c', 'avg', numeric_text(value_node.get('Temperature'), -20, 50)),
+                    '平均相對濕度': ('humidity_percent', 'avg', numeric_text(value_node.get('RelativeHumidity'), 0, 100)),
+                    '最低體感溫度': ('min_apparent_c', 'min', numeric_text(value_node.get('MinApparentTemperature'), -30, 60)),
+                    '最高體感溫度': ('max_apparent_c', 'max', numeric_text(value_node.get('MaxApparentTemperature'), -30, 60)),
+                    '12小時降雨機率': ('precipitation_probability', 'max', numeric_text(value_node.get('ProbabilityOfPrecipitation'), 0, 100)),
+                    '紫外線指數': ('uv_index', 'max', numeric_text(value_node.get('UVIndex'), 0, 20)),
+                    '風速': ('wind_speed_mps', 'max', numeric_text(value_node.get('WindSpeed'), 0, 150)),
+                }.get(name)
+                if numeric and numeric[2] is not None:
+                    column, operation, value = numeric
+                    if operation == 'avg':
+                        row.setdefault('_averages', {}).setdefault(column, []).append(value)
+                    else:
+                        old = row.get(column, value)
+                        row[column] = min(old, value) if operation == 'min' else max(old, value)
+                categorical = {
+                    '天氣現象': ('weather', value_node.get('Weather')),
+                    '風向': ('wind_direction', value_node.get('WindDirection')),
+                    '最大舒適度指數': ('comfort', value_node.get('MaxComfortIndexDescription')),
+                    '最小舒適度指數': ('comfort', value_node.get('MinComfortIndexDescription')),
+                    '天氣預報綜合描述': ('description', value_node.get('WeatherDescription')),
+                }.get(name)
+                if categorical and categorical[1]:
+                    row.setdefault('_categories', {}).setdefault(categorical[0], []).append(categorical[1])
+                if name == '天氣現象' and value_node.get('WeatherCode'):
+                    row.setdefault('_categories', {}).setdefault('weather_code', []).append(value_node['WeatherCode'])
     valid_dates = sorted(d for d,hours in county_dates.items() if min(hours)<=6 and max(hours)>=18)[:7] if is_county else None
-    return sorted([r for r in daily.values() if (valid_dates is None or r['dataDate'] in valid_dates) and 'mint' in r and 'maxt' in r and r['mint'] <= r['maxt']], key=lambda r:(r['regionName'],r['dataDate']))
+    result = []
+    for row in daily.values():
+        if (valid_dates is not None and row['dataDate'] not in valid_dates) or 'mint' not in row or 'maxt' not in row or row['mint'] > row['maxt']:
+            continue
+        for column, values in row.pop('_averages', {}).items():
+            row[column] = round(sum(values) / len(values), 1)
+        for column, values in row.pop('_categories', {}).items():
+            row[column] = most_common(values)
+        result.append(row)
+    return sorted(result, key=lambda r:(r['regionName'],r['dataDate']))
+
+def parse_warnings(payload):
+    """Flatten CWA W-C0033-001 county hazards into display-safe records."""
+    result = []
+    records = payload.get('records', payload)
+    for location in items(records.get('location', records.get('Location', []))):
+        county = location.get('locationName', location.get('LocationName'))
+        conditions = location.get('hazardConditions', location.get('HazardConditions', {}))
+        hazards = conditions.get('hazards', conditions.get('Hazards', [])) if isinstance(conditions, dict) else []
+        for hazard in items(hazards):
+            info = hazard.get('info', hazard.get('Info', {}))
+            valid = hazard.get('validTime', hazard.get('ValidTime', {}))
+            phenomenon = info.get('phenomena', info.get('Phenomena'))
+            if not county or not phenomenon:
+                continue
+            result.append({
+                'county': str(county),
+                'phenomenon': str(phenomenon),
+                'significance': str(info.get('significance', info.get('Significance', ''))),
+                'start_time': valid.get('startTime', valid.get('StartTime')),
+                'end_time': valid.get('endTime', valid.get('EndTime')),
+            })
+    unique = {(r['county'], r['phenomenon'], r['start_time'], r['end_time']): r for r in result}
+    return sorted(unique.values(), key=lambda r: (r['county'], r['phenomenon']))
 
 def parse_observations(payload):
     result = {}
